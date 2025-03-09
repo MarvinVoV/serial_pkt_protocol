@@ -8,7 +8,9 @@ add_executable(${TEST_TARGET}
         pkt_protocol_test.c          # 测试代码
         ../src/pkt_protocol.c
         ../src/pkt_protocol_buf.c
-        ../vendor/unity/unity.c # Unity 框架源码
+        ../vendor/unity/unity.c
+        ../src/mqtt_utils.c
+        ../include/mqtt_utils.h # Unity 框架源码
 )
 
 # 设置头文件包含路径

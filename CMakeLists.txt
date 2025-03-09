@@ -10,6 +10,8 @@ add_executable(serial_pkt_protocol
         src/ring_buffer.c
         src/pkt_protocol.c
         src/pkt_protocol_buf.c
+        src/mqtt_utils.c
+        include/mqtt_utils.h
 )
 
 

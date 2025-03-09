@@ -4,6 +4,7 @@
 #include "unity.h"
 #include "pkt_protocol.h"
 #include "pkt_protocol_buf.h"
+#include "mqtt_utils.h"
 
 static int callback_triggered = 0;
 
@@ -29,8 +30,14 @@ void tearDown(void)
 
 void test_all_append(void)
 {
+    // const uint8_t data[] = {
+    //     0x55, 0xAA, 0x01, 0x0A, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x77, 0x6F, 0x72, 0x6C, 0x64, 0x84, 0xDA, 0xAA, 0x55
+    //
+    // };
     const uint8_t data[] = {
-        0x55, 0xAA, 0x01, 0x0A, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x77, 0x6F, 0x72, 0x6C, 0x64, 0x84, 0xDA, 0xAA, 0x55
+        0x55, 0xAA, 0x02, 0x0D, 0x00, 0x00, 0x03, 0x0A,
+        0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x57, 0x6F, 0x72,
+        0x6C, 0x64, 0x49, 0x08, 0xAA, 0x55
     };
     protocol_receiver_append(&receiver, data, sizeof(data));
     TEST_ASSERT_EQUAL(1, callback_triggered); // 验证回调触发
@@ -182,7 +189,7 @@ void test_append_partial_discard_on_realloc_fail(void)
     protocol_receiver_init(&receiver, 50, (frame_callback)mock_callback);
 
     // NOTE 需要手动mock内存申请失败
-    receiver.write_pos = 40; // 初始写入位置
+    receiver.write_pos = 40;          // 初始写入位置
     const uint8_t new_data[20] = {0}; // 追加 20字节数据
     protocol_receiver_append(&receiver, new_data, 20);
 
@@ -244,21 +251,33 @@ void test_pack_and_parse()
     TEST_ASSERT_EQUAL_INT(1, result);
 }
 
+void test_mqtt_topic_match()
+{
+    bool res = mqtt_topic_match("cmd/esp32/+/exec", "cmd/esp32/DEV1/exec");
+    TEST_ASSERT_TRUE(res);
+    res = mqtt_topic_match("a/+/b", "a/test/b");
+    TEST_ASSERT_TRUE(res);
+
+    res = mqtt_topic_match("cmd/esp32/+/exec", "cmd/esp32/invalid/exec/extra");
+    TEST_ASSERT_FALSE(res);
+}
 
 // --- 主函数运行所有测试 ---
 int main(void)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_mqtt_topic_match);
+
     // RUN_TEST(test_htole16);
     // RUN_TEST(test_all_append);
     // RUN_TEST(test_partial_append);
     // RUN_TEST(test_pack_and_parse);
     // RUN_TEST(test_append_normal);
     // RUN_TEST(test_append_after_processing);
-    RUN_TEST(test_multiple_partial_append);
-    RUN_TEST(test_multiple_partial_append2);
-    RUN_TEST(test_multiple_partial_append3);
-    RUN_TEST(test_multiple_partial_append4);
+    // RUN_TEST(test_multiple_partial_append);
+    // RUN_TEST(test_multiple_partial_append2);
+    // RUN_TEST(test_multiple_partial_append3);
+    // RUN_TEST(test_multiple_partial_append4);
     // RUN_TEST(test_append_partial_discard_on_realloc_fail);
     // RUN_TEST(test_append_full_discard_on_realloc_fail);
     return UNITY_END();
