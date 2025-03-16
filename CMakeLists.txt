@@ -12,6 +12,7 @@ add_executable(serial_pkt_protocol
         src/pkt_protocol_buf.c
         src/mqtt_utils.c
         include/mqtt_utils.h
+        include/ctrl_protocol.h
 )
 
 

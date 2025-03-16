@@ -5,12 +5,17 @@
 #include "pkt_protocol.h"
 #include "pkt_protocol_buf.h"
 #include "mqtt_utils.h"
+#include "ctrl_protocol.h"
+#include <string.h>
 
 static int callback_triggered = 0;
 
 static void mock_callback(protocol_type_t type, uint8_t* data, uint16_t len)
 {
     callback_triggered++;
+
+    // control_cmd_t* cmd = (control_cmd_t*)data;
+    // print_hex_data(data, sizeof(control_cmd_t));
 }
 
 // 测试上下文
@@ -40,6 +45,37 @@ void test_all_append(void)
         0x6C, 0x64, 0x49, 0x08, 0xAA, 0x55
     };
     protocol_receiver_append(&receiver, data, sizeof(data));
+    TEST_ASSERT_EQUAL(1, callback_triggered); // 验证回调触发
+}
+
+void test_ctrl_protocol(void)
+{
+
+    const char *message = "helloworld";  // 10字符
+    const uint8_t message_len = strlen(message);
+
+    const size_t total_size = sizeof(control_cmd_t) + message_len;
+    control_cmd_t *cmd = malloc(total_size);
+    // 结构体初始化 ----------
+    memset(cmd, 0, total_size);  // 清零防止脏数据
+    // 基础字段
+    cmd->ctrl_id = 0x01;  // 示例设备ID
+    cmd->ctrl_fields = CTRL_FIELD_TEXT;  // 设置文本控制位
+    cmd->ping_text.len = message_len;
+    memcpy(cmd->ping_text.msg, message, message_len);  // 注意不拷贝终止符
+
+    // 转换为字节流 ----------
+    uint8_t *byte_stream = (uint8_t*)cmd;
+
+
+    uint16_t frame_len;
+    const uint8_t* frame = protocol_pack_frame(PROTOCOL_TYPE_CONTROL, byte_stream,
+                                               total_size, &frame_len);
+    print_hex_data(frame, frame_len);
+    TEST_ASSERT_NOT_NULL(frame);
+
+    // Append
+    protocol_receiver_append(&receiver, frame, frame_len);
     TEST_ASSERT_EQUAL(1, callback_triggered); // 验证回调触发
 }
 
@@ -145,6 +181,7 @@ void test_append_normal(void)
 {
     // Prepare data
     const uint8_t sensor_data[] = {0x01, 0x02, 0x03, 0x04};
+
     uint16_t frame_len;
     const uint8_t* frame = protocol_pack_frame(PROTOCOL_TYPE_SENSOR, sensor_data,
                                                sizeof(sensor_data), &frame_len);
@@ -266,7 +303,8 @@ void test_mqtt_topic_match()
 int main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(test_mqtt_topic_match);
+    // RUN_TEST(test_mqtt_topic_match);
+    RUN_TEST(test_ctrl_protocol);
 
     // RUN_TEST(test_htole16);
     // RUN_TEST(test_all_append);

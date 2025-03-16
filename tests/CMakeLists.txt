@@ -10,7 +10,8 @@ add_executable(${TEST_TARGET}
         ../src/pkt_protocol_buf.c
         ../vendor/unity/unity.c
         ../src/mqtt_utils.c
-        ../include/mqtt_utils.h # Unity 框架源码
+        ../include/mqtt_utils.h
+        ../include/ctrl_protocol.h # Unity 框架源码
 )
 
 # 设置头文件包含路径
